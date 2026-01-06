@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Engineering | Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <style>
+        :root {
+            --gray-50: #fafafa; --gray-100: #f4f4f5; --gray-200: #e4e4e7; --gray-300: #d4d4d8;
+            --gray-400: #a1a1aa; --gray-500: #71717a; --gray-600: #52525b; --gray-700: #3f3f46;
+            --gray-800: #27272a; --gray-900: #18181b; --gray-950: #09090b;
+            --blue: #3b82f6; --blue-light: #dbeafe; --green: #22c55e; --green-light: #dcfce7;
+            --orange: #f59e0b; --orange-light: #fef3c7; --red: #ef4444; --red-light: #fee2e2;
+            --purple: #8b5cf6; --purple-light: #ede9fe; --teal: #14b8a6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--gray-100); color: var(--gray-800); height: 100vh; overflow: hidden; }
+        
+        .app { display: flex; height: 100vh; }
+        
+        .sidebar { width: 280px; background: var(--gray-950); color: var(--gray-300); display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--gray-800); }
+        .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--blue), var(--purple)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; }
+        .logo-text { font-size: 14px; font-weight: 600; color: white; }
+        .logo-text span { display: block; font-size: 11px; color: var(--gray-500); font-weight: 400; }
+        
+        .new-project-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--blue), var(--purple)); border: none; border-radius: 8px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; }
+        .new-project-btn:hover { opacity: 0.9; }
+        
+        .clients-list { flex: 1; overflow-y: auto; padding: 12px; }
+        .client-group { margin-bottom: 8px; }
+        .client-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--gray-900); border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+        .client-header:hover { background: var(--gray-800); }
+        .client-expand { font-size: 10px; transition: transform 0.2s; }
+        .client-expand.expanded { transform: rotate(90deg); }
+        .client-name { flex: 1; font-size: 13px; font-weight: 500; color: white; }
+        .client-badge { background: var(--gray-700); color: var(--gray-300); font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+        
+        .client-projects { background: var(--gray-900); border-radius: 0 0 8px 8px; max-height: 0; overflow: hidden; transition: max-height 0.3s, padding 0.3s; padding: 0 8px; }
+        .client-projects.expanded { max-height: 500px; padding: 4px 8px 8px; }
+        
+        .project-item { padding: 12px; border-radius: 6px; cursor: pointer; margin-top: 4px; border-left: 3px solid transparent; transition: all 0.2s; }
+        .project-item:hover { background: var(--gray-800); }
+        .project-item.active { background: var(--gray-800); border-left-color: var(--blue); }
+        .project-name { font-size: 13px; color: white; }
+
+        .sidebar-footer { padding: 12px; border-top: 1px solid var(--gray-800); }
+        .settings-btn { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--gray-900); border-radius: 8px; cursor: pointer; width: 100%; border: none; color: var(--gray-400); font-size: 13px; }
+        .settings-btn:hover { background: var(--gray-800); }
+
+        .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        
+        .header { padding: 16px 24px; background: white; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
+        .header-left h1 { font-size: 20px; font-weight: 600; }
+        .header-left p { font-size: 13px; color: var(--gray-500); margin-top: 2px; }
+        
+        .btn { padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+        .btn-primary { background: var(--blue); color: white; }
+        .btn-secondary { background: white; color: var(--gray-700); border: 1px solid var(--gray-300); }
+        .btn-success { background: var(--green); color: white; }
+        .btn-danger { background: var(--red); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .tabs { display: flex; background: white; border-bottom: 1px solid var(--gray-200); padding: 0 24px; overflow-x: auto; }
+        .tab { padding: 14px 16px; font-size: 13px; color: var(--gray-500); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; }
+        .tab:hover { color: var(--gray-700); }
+        .tab.active { color: var(--blue); border-bottom-color: var(--blue); font-weight: 500; }
+        .tab-badge { background: var(--blue); color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-left: 6px; }
+        .tab-badge.warning { background: var(--orange); }
+        .tab-badge.success { background: var(--green); }
+
+        .content { flex: 1; display: flex; overflow: hidden; }
+        .content-main { flex: 1; overflow-y: auto; padding: 24px; }
+
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid var(--gray-200); }
+        .stat-value { font-size: 28px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .stat-label { font-size: 13px; color: var(--gray-500); margin-top: 4px; }
+
+        .card { background: white; border-radius: 12px; border: 1px solid var(--gray-200); margin-bottom: 20px; }
+        .card-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .card-title { font-size: 15px; font-weight: 600; }
+        .card-body { padding: 20px; }
+        .card-body.no-padding { padding: 0; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--gray-700); }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 14px; font-family: inherit; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px var(--blue-light); }
+        .form-textarea { resize: vertical; min-height: 100px; }
+
+        .table-container { overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        .table th { text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+        .table td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+        .table tr:hover { background: var(--gray-50); }
+        .table .checkbox-cell { width: 40px; }
+        .table input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+
+        .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500; }
+        .status-light { background: var(--gray-100); color: var(--gray-600); }
+        .status-selected { background: var(--blue-light); color: var(--blue); }
+        .status-processing { background: var(--orange-light); color: var(--orange); }
+        .status-hard { background: var(--purple-light); color: var(--purple); }
+        .status-ready { background: var(--green-light); color: var(--green); }
+        .status-queued { background: var(--blue-light); color: var(--blue); }
+        .status-sent { background: var(--green-light); color: var(--green); }
+        .status-draft { background: var(--gray-100); color: var(--gray-600); }
+        .status-approved { background: var(--green-light); color: var(--green); }
+
+        .bulk-bar { display: none; align-items: center; gap: 16px; padding: 12px 20px; background: var(--blue); color: white; border-radius: 8px; margin-bottom: 16px; }
+        .bulk-bar.visible { display: flex; }
+        .bulk-bar .count { font-weight: 600; }
+        .bulk-bar .btn { background: white; color: var(--blue); }
+        .bulk-bar .btn-danger { background: var(--red); color: white; }
+
+        .chat-panel { width: 380px; background: white; border-left: 1px solid var(--gray-200); display: flex; flex-direction: column; flex-shrink: 0; }
+        .chat-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 12px; }
+        .chat-avatar { width: 40px; height: 40px; background: linear-gradient(135deg, var(--teal), var(--blue)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .chat-info { flex: 1; }
+        .chat-info h3 { font-size: 14px; font-weight: 600; }
+        .chat-info p { font-size: 12px; color: var(--gray-500); }
+        
+        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
+        .message { display: flex; gap: 10px; margin-bottom: 16px; }
+        .message.user { flex-direction: row-reverse; }
+        .msg-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+        .message.ai .msg-avatar { background: linear-gradient(135deg, var(--teal), var(--blue)); }
+        .message.user .msg-avatar { background: var(--gray-200); }
+        .msg-bubble { max-width: 85%; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
+        .message.ai .msg-bubble { background: var(--gray-100); }
+        .message.user .msg-bubble { background: var(--blue); color: white; }
+        
+        .typing { display: flex; gap: 4px; padding: 8px 0; }
+        .typing span { width: 8px; height: 8px; background: var(--gray-400); border-radius: 50%; animation: typing 1.4s infinite; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+        
+        .chat-input-area { padding: 16px 20px; border-top: 1px solid var(--gray-200); }
+        .chat-input-wrapper { display: flex; gap: 10px; }
+        .chat-input { flex: 1; padding: 12px 16px; border: 1px solid var(--gray-300); border-radius: 12px; font-size: 14px; font-family: inherit; resize: none; }
+        .chat-input:focus { outline: none; border-color: var(--blue); }
+        .chat-send { width: 44px; height: 44px; background: var(--blue); border: none; border-radius: 12px; color: white; font-size: 18px; cursor: pointer; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; border-radius: 16px; width: 100%; max-width: 700px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal.large { max-width: 900px; }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 18px; font-weight: 600; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray-400); line-height: 1; }
+        .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 12px; }
+
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1001; }
+        .toast { padding: 14px 20px; background: var(--gray-900); color: white; border-radius: 10px; margin-top: 10px; font-size: 14px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s; }
+        .toast.success { background: var(--green); }
+        .toast.error { background: var(--red); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .prospect-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .prospect-detail .full-width { grid-column: 1 / -1; }
+        .detail-label { font-size: 11px; text-transform: uppercase; color: var(--gray-500); margin-bottom: 4px; font-weight: 600; }
+        .detail-value { font-size: 14px; color: var(--gray-800); }
+        .detail-value a { color: var(--blue); }
+
+        .loading { display: flex; align-items: center; justify-content: center; padding: 40px; color: var(--gray-500); }
+        .spinner { width: 24px; height: 24px; border: 3px solid var(--gray-200); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; margin-right: 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .no-data { text-align: center; padding: 40px; color: var(--gray-500); }
+
+        .filters { display: flex; gap: 12px; flex-wrap: wrap; }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-group label { font-size: 12px; color: var(--gray-500); }
+        .filter-group select { padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 13px; }
+
+        .data-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .data-item { background: var(--gray-50); padding: 12px; border-radius: 8px; }
+        .data-item-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; margin-bottom: 4px; }
+        .data-item-value { font-size: 14px; font-weight: 500; }
+        .data-item-value.positive { color: var(--green); }
+        .data-item-value.negative { color: var(--red); }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">ME</div>
+                    <div class="logo-text">Market Engineering<span>Platform v3.0</span></div>
+                </div>
+                <button class="new-project-btn" onclick="showModal('new-project-modal')">+ Nuovo Progetto</button>
+            </div>
+            <div class="clients-list" id="clients-list"></div>
+            <div class="sidebar-footer">
+                <button class="settings-btn" onclick="showModal('settings-modal')">⚙️ Impostazioni</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <div id="no-project-view" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div style="font-size:48px;margin-bottom:12px;opacity:0.5;">📁</div>
+                <h2 style="margin-bottom:8px;">Seleziona un progetto</h2>
+                <p style="color:var(--gray-500);margin-bottom:20px;">Scegli dalla sidebar o creane uno nuovo</p>
+                <button class="btn btn-primary" onclick="showModal('new-project-modal')">+ Nuovo Progetto</button>
+            </div>
+
+            <div id="project-view" style="display:none;flex-direction:column;height:100%;">
+                <div class="header">
+                    <div class="header-left">
+                        <h1 id="project-title">-</h1>
+                        <p id="project-subtitle">-</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="showModal('edit-project-modal')">✏️ Modifica</button>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" data-tab="overview" onclick="switchTab('overview')">Overview</div>
+                    <div class="tab" data-tab="strategy" onclick="switchTab('strategy')">Strategia</div>
+                    <div class="tab" data-tab="prospects" onclick="switchTab('prospects')">Prospects <span class="tab-badge" id="prospects-count">0</span></div>
+                    <div class="tab" data-tab="email-queue" onclick="switchTab('email-queue')">Email Queue <span class="tab-badge warning" id="queue-count">0</span></div>
+                    <div class="tab" data-tab="sent" onclick="switchTab('sent')">Inviate <span class="tab-badge success" id="sent-count">0</span></div>
+                    <div class="tab" data-tab="kpi" onclick="switchTab('kpi')">KPI</div>
+                </div>
+
+                <div class="content">
+                    <div class="content-main" id="content-main">
+                        
+                        <!-- OVERVIEW -->
+                        <div class="tab-content active" id="tab-overview">
+                            <div class="stats-row">
+                                <div class="stat-card"><div class="stat-value" id="stat-prospects">0</div><div class="stat-label">Prospects</div></div>
+                                <div class="stat-card"><div class="stat-value" id="stat-selected">0</div><div class="stat-label">Hard Research</div></div>
+                                <div class="stat-card"><div class="stat-value" id="stat-queued">0</div><div class="stat-label">In Coda</div></div>
+                                <div class="stat-card"><div class="stat-value" id="stat-sent">0</div><div class="stat-label">Inviate</div></div>
+                                <div class="stat-card"><div class="stat-value" id="stat-replied">0</div><div class="stat-label">Risposte</div></div>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header"><span class="card-title">Flusso Campagna</span></div>
+                                <div class="card-body">
+                                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                                        <div style="flex:1;min-width:150px;padding:16px;background:var(--gray-50);border-radius:8px;text-align:center;">
+                                            <div style="font-size:24px;margin-bottom:8px;">1️⃣</div>
+                                            <div style="font-weight:600;font-size:13px;">Strategia</div>
+                                            <div style="font-size:12px;color:var(--gray-500);">Definisci target</div>
+                                        </div>
+                                        <div style="flex:1;min-width:150px;padding:16px;background:var(--blue-light);border-radius:8px;text-align:center;">
+                                            <div style="font-size:24px;margin-bottom:8px;">2️⃣</div>
+                                            <div style="font-weight:600;font-size:13px;">Light Research</div>
+                                            <div style="font-size:12px;color:var(--gray-500);">Trova aziende</div>
+                                        </div>
+                                        <div style="flex:1;min-width:150px;padding:16px;background:var(--purple-light);border-radius:8px;text-align:center;">
+                                            <div style="font-size:24px;margin-bottom:8px;">3️⃣</div>
+                                            <div style="font-weight:600;font-size:13px;">Hard Research</div>
+                                            <div style="font-size:12px;color:var(--gray-500);">Analisi profonda</div>
+                                        </div>
+                                        <div style="flex:1;min-width:150px;padding:16px;background:var(--orange-light);border-radius:8px;text-align:center;">
+                                            <div style="font-size:24px;margin-bottom:8px;">4️⃣</div>
+                                            <div style="font-weight:600;font-size:13px;">Email Queue</div>
+                                            <div style="font-size:12px;color:var(--gray-500);">Revisiona e approva</div>
+                                        </div>
+                                        <div style="flex:1;min-width:150px;padding:16px;background:var(--green-light);border-radius:8px;text-align:center;">
+                                            <div style="font-size:24px;margin-bottom:8px;">5️⃣</div>
+                                            <div style="font-weight:600;font-size:13px;">Invio</div>
+                                            <div style="font-size:12px;color:var(--gray-500);">Track & optimize</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STRATEGY -->
+                        <div class="tab-content" id="tab-strategy">
+                            <div class="card">
+                                <div class="card-header"><span class="card-title">🎯 Strategia Campagna</span></div>
+                                <div class="card-body">
+                                    <p style="color:var(--gray-500);">Parla con Marco per definire la strategia</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- PROSPECTS -->
+                        <div class="tab-content" id="tab-prospects">
+                            <div class="bulk-bar" id="prospects-bulk-bar">
+                                <span class="count"><span id="selected-count">0</span> selezionati</span>
+                                <button class="btn btn-sm" onclick="bulkSelectForHardResearch()">🔬 Hard Research</button>
+                                <button class="btn btn-sm" onclick="bulkGenerateEmails()">📧 Genera Email</button>
+                                <button class="btn btn-sm btn-danger" onclick="bulkDeleteProspects()">🗑️ Elimina</button>
+                                <button class="btn btn-sm" onclick="clearSelection()" style="margin-left:auto;">✕ Deseleziona</button>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="card-title">Lista Prospects</span>
+                                    <div class="filters">
+                                        <div class="filter-group">
+                                            <label>Status:</label>
+                                            <select id="filter-status" onchange="loadProspects()">
+                                                <option value="">Tutti</option>
+                                                <option value="light">Light Research</option>
+                                                <option value="selected">Selezionati</option>
+                                                <option value="hard">Hard Research</option>
+                                                <option value="queued">In Coda</option>
+                                                <option value="sent">Inviati</option>
+                                            </select>
+                                        </div>
+                                        <button class="btn btn-sm btn-primary" onclick="showModal('search-modal')">🔍 Cerca Aziende</button>
+                                    </div>
+                                </div>
+                                <div class="card-body no-padding">
+                                    <div class="table-container">
+                                        <table class="table" id="prospects-table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="checkbox-cell"><input type="checkbox" id="select-all-prospects" onchange="toggleSelectAll()"></th>
+                                                    <th>Azienda</th>
+                                                    <th>Fatturato</th>
+                                                    <th>Settore</th>
+                                                    <th>Status</th>
+                                                    <th>Azioni</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="prospects-tbody">
+                                                <tr><td colspan="6" class="no-data">Nessun prospect. Clicca "🔍 Cerca Aziende" per iniziare.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- EMAIL QUEUE -->
+                        <div class="tab-content" id="tab-email-queue">
+                            <div class="bulk-bar" id="queue-bulk-bar">
+                                <span class="count"><span id="queue-selected-count">0</span> selezionate</span>
+                                <button class="btn btn-sm btn-success" onclick="bulkApproveEmails()">✅ Approva</button>
+                                <button class="btn btn-sm btn-danger" onclick="bulkDeleteEmails()">🗑️ Elimina</button>
+                                <button class="btn btn-sm" onclick="clearQueueSelection()" style="margin-left:auto;">✕ Deseleziona</button>
+                            </div>
+                            
+                            <div class="card">
+                                <div class="card-header">
+                                    <span class="card-title">Email in Coda</span>
+                                    <button class="btn btn-sm btn-success" onclick="sendApprovedEmails()">🚀 Invia Approvate</button>
+                                </div>
+                                <div class="card-body no-padding">
+                                    <div class="table-container">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="checkbox-cell"><input type="checkbox" id="select-all-queue" onchange="toggleSelectAllQueue()"></th>
+                                                    <th>Destinatario</th>
+                                                    <th>Oggetto</th>
+                                                    <th>Status</th>
+                                                    <th>Azioni</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="queue-tbody">
+                                                <tr><td colspan="5" class="no-data">Nessuna email in coda.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SENT -->
+                        <div class="tab-content" id="tab-sent">
+                            <div class="card">
+                                <div class="card-header"><span class="card-title">Email Inviate</span></div>
+                                <div class="card-body no-padding">
+                                    <div class="table-container">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Destinatario</th>
+                                                    <th>Oggetto</th>
+                                                    <th>Inviata</th>
+                                                    <th>Aperta</th>
+                                                    <th>Click</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="sent-tbody">
+                                                <tr><td colspan="5" class="no-data">Nessuna email inviata.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- KPI -->
+                        <div class="tab-content" id="tab-kpi">
+                            <div class="stats-row">
+                                <div class="stat-card"><div class="stat-value">0%</div><div class="stat-label">Open Rate</div></div>
+                                <div class="stat-card"><div class="stat-value">0%</div><div class="stat-label">Click Rate</div></div>
+                                <div class="stat-card"><div class="stat-value">0%</div><div class="stat-label">Reply Rate</div></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- CHAT PANEL -->
+                    <aside class="chat-panel" id="chat-panel">
+                        <div class="chat-header">
+                            <div class="chat-avatar">🧑‍💼</div>
+                            <div class="chat-info"><h3>Marco</h3><p>Consulente B2B</p></div>
+                        </div>
+                        <div class="chat-messages" id="chat-messages"></div>
+                        <div class="chat-input-area">
+                            <div class="chat-input-wrapper">
+                                <textarea class="chat-input" id="chat-input" placeholder="Scrivi a Marco..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+                                <button class="chat-send" onclick="sendMessage()">➤</button>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    
+    <!-- New Project Modal -->
+    <div class="modal-overlay" id="new-project-modal">
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">Nuovo Progetto</span><button class="modal-close" onclick="hideModal('new-project-modal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Cliente</label>
+                    <select class="form-select" id="new-project-client"><option value="">Seleziona...</option></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Nome Progetto *</label>
+                    <input type="text" class="form-input" id="new-project-name" placeholder="Es: Campagna Q1 2026">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Descrizione</label>
+                    <textarea class="form-textarea" id="new-project-desc" placeholder="Descrizione opzionale..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('new-project-modal')">Annulla</button>
+                <button class="btn btn-primary" onclick="createProject()">Crea Progetto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Project Modal -->
+    <div class="modal-overlay" id="edit-project-modal">
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">Modifica Progetto</span><button class="modal-close" onclick="hideModal('edit-project-modal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Nome</label>
+                    <input type="text" class="form-input" id="edit-project-name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('edit-project-modal')">Annulla</button>
+                <button class="btn btn-danger" onclick="deleteProject()" style="margin-right:auto;">Elimina</button>
+                <button class="btn btn-primary" onclick="saveProject()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">⚙️ Impostazioni</span><button class="modal-close" onclick="hideModal('settings-modal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Email per Test Interni</label>
+                    <input type="email" class="form-input" id="settings-test-email" placeholder="tuaemail@azienda.com">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('settings-modal')">Annulla</button>
+                <button class="btn btn-primary" onclick="saveSettings()">Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="modal-overlay" id="search-modal">
+        <div class="modal">
+            <div class="modal-header"><span class="modal-title">🔍 Cerca Aziende su CompanyReports</span><button class="modal-close" onclick="hideModal('search-modal')">&times;</button></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Provincia *</label>
+                    <input type="text" class="form-input" id="search-provincia" placeholder="Es: Milano, Como, Brescia...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Numero Aziende</label>
+                    <input type="number" class="form-input" id="search-max" value="10" min="1" max="50">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fatturato Minimo (€)</label>
+                    <input type="number" class="form-input" id="search-min-revenue" placeholder="Es: 1000000">
+                </div>
+                <p style="font-size:12px;color:var(--gray-500);margin-top:8px;">⏱️ Circa 2 secondi per azienda (per rispettare i limiti del sito)</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('search-modal')">Annulla</button>
+                <button class="btn btn-primary" onclick="searchCompanies()" id="search-btn">🔍 Cerca e Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prospect Detail Modal -->
+    <div class="modal-overlay" id="prospect-modal">
+        <div class="modal large">
+            <div class="modal-header">
+                <span class="modal-title" id="prospect-modal-title">Dettaglio Prospect</span>
+                <button class="modal-close" onclick="hideModal('prospect-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="prospect-modal-body"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('prospect-modal')">Chiudi</button>
+                <button class="btn btn-primary" onclick="runHardResearch(currentProspectId)">🔬 Hard Research</button>
+                <button class="btn btn-success" onclick="generateEmailForProspect(currentProspectId)">📧 Genera Email</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Editor Modal -->
+    <div class="modal-overlay" id="email-editor-modal">
+        <div class="modal large">
+            <div class="modal-header">
+                <span class="modal-title">✏️ Modifica Email</span>
+                <button class="modal-close" onclick="hideModal('email-editor-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Destinatario</label>
+                    <input type="text" class="form-input" id="editor-recipient" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Oggetto</label>
+                    <input type="text" class="form-input" id="editor-subject">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contenuto</label>
+                    <textarea id="editor-content" style="height:300px;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideModal('email-editor-modal')">Annulla</button>
+                <button class="btn btn-primary" onclick="saveEmailChanges()">💾 Salva</button>
+                <button class="btn btn-success" onclick="saveAndApprove()">✅ Salva e Approva</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        const API = 'https://market-engineering-api-production.up.railway.app';
+        
+        let clients = [];
+        let currentProjectId = null;
+        let currentProject = null;
+        let prospects = [];
+        let emailQueue = [];
+        let selectedProspects = new Set();
+        let selectedEmails = new Set();
+        let conversation = [];
+        let testEmail = localStorage.getItem('testEmail') || '';
+        let currentProspectId = null;
+        let currentEmailId = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadClients();
+            document.getElementById('settings-test-email').value = testEmail;
+        });
+
+        // ==================== CLIENTS & PROJECTS ====================
+        
+        async function loadClients() {
+            try {
+                const [clientsRes, projectsRes] = await Promise.all([
+                    fetch(`${API}/api/clients`),
+                    fetch(`${API}/api/projects`)
+                ]);
+                const clientsData = await clientsRes.json();
+                const projectsData = await projectsRes.json();
+                
+                if (clientsData.success) clients = clientsData.clients || [];
+                
+                const allProjects = projectsData.success ? (projectsData.projects || []) : [];
+                const orphanProjects = allProjects.filter(p => !p.client_id && p.status !== 'deleted');
+                
+                clients.forEach(c => {
+                    c.projects = allProjects.filter(p => p.client_id === c.id && p.status !== 'deleted');
+                });
+                
+                if (orphanProjects.length > 0) {
+                    clients.push({ id: 'orphan', name: 'Senza Cliente', company_name: 'Senza Cliente', projects: orphanProjects });
+                }
+                
+                renderSidebar();
+                populateClientSelect();
+            } catch (e) { console.error(e); toast('Errore caricamento', 'error'); }
+        }
+
+        function renderSidebar() {
+            const el = document.getElementById('clients-list');
+            if (!clients.length) { el.innerHTML = '<p style="padding:20px;color:var(--gray-500);text-align:center;">Nessun cliente</p>'; return; }
+            
+            el.innerHTML = clients.map(c => {
+                const projects = c.projects || [];
+                const isExpanded = projects.some(p => p.id === currentProjectId) || projects.length > 0;
+                return `
+                    <div class="client-group">
+                        <div class="client-header" onclick="toggleClient('${c.id}')">
+                            <span class="client-expand ${isExpanded ? 'expanded' : ''}" id="expand-${c.id}">${projects.length ? '▶' : ''}</span>
+                            <span class="client-name">${c.company_name || c.name}</span>
+                            ${projects.length ? `<span class="client-badge">${projects.length}</span>` : ''}
+                        </div>
+                        <div class="client-projects ${isExpanded ? 'expanded' : ''}" id="projects-${c.id}">
+                            ${projects.map(p => `
+                                <div class="project-item ${currentProjectId === p.id ? 'active' : ''}" onclick="event.stopPropagation();selectProject('${p.id}')">
+                                    <span class="project-name">${p.name}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleClient(id) {
+            document.getElementById(`projects-${id}`)?.classList.toggle('expanded');
+            document.getElementById(`expand-${id}`)?.classList.toggle('expanded');
+        }
+
+        function populateClientSelect() {
+            const sel = document.getElementById('new-project-client');
+            sel.innerHTML = '<option value="">Seleziona...</option>' + 
+                clients.filter(c => c.id !== 'orphan').map(c => `<option value="${c.id}">${c.company_name || c.name}</option>`).join('');
+        }
+
+        async function selectProject(id) {
+            currentProjectId = id;
+            document.getElementById('no-project-view').style.display = 'none';
+            document.getElementById('project-view').style.display = 'flex';
+            
+            renderSidebar();
+            await loadProject(id);
+        }
+
+        async function loadProject(id) {
+            try {
+                const res = await fetch(`${API}/api/projects/${id}`);
+                const data = await res.json();
+                if (data.success) {
+                    currentProject = data.project;
+                    conversation = data.conversation || [];
+                    
+                    document.getElementById('project-title').textContent = currentProject.name;
+                    const client = clients.find(c => c.projects?.some(p => p.id === id));
+                    document.getElementById('project-subtitle').textContent = client?.company_name || '';
+                    
+                    renderConversation();
+                    loadProspects();
+                    loadEmailQueue();
+                    
+                    if (!conversation.length) {
+                        addMessageUI("Ciao! Sono Marco. Raccontami cosa vuoi promuovere e a chi.", 'ai');
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function createProject() {
+            const clientId = document.getElementById('new-project-client').value;
+            const name = document.getElementById('new-project-name').value.trim();
+            const desc = document.getElementById('new-project-desc').value.trim();
+            
+            if (!name) { toast('Nome obbligatorio', 'error'); return; }
+            
+            try {
+                const res = await fetch(`${API}/api/projects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description: desc, client_id: clientId || null })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    hideModal('new-project-modal');
+                    await loadClients();
+                    selectProject(data.project.id);
+                    toast('Progetto creato!', 'success');
+                }
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        async function saveProject() {
+            const name = document.getElementById('edit-project-name').value.trim();
+            if (!name) return;
+            
+            await fetch(`${API}/api/projects/${currentProjectId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name })
+            });
+            hideModal('edit-project-modal');
+            document.getElementById('project-title').textContent = name;
+            await loadClients();
+            toast('Salvato', 'success');
+        }
+
+        async function deleteProject() {
+            if (!confirm('Eliminare questo progetto?')) return;
+            await fetch(`${API}/api/projects/${currentProjectId}`, { method: 'DELETE' });
+            hideModal('edit-project-modal');
+            currentProjectId = null;
+            document.getElementById('project-view').style.display = 'none';
+            document.getElementById('no-project-view').style.display = 'flex';
+            await loadClients();
+            toast('Eliminato', 'success');
+        }
+
+        // ==================== TABS ====================
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`tab-${tab}`)?.classList.add('active');
+            
+            if (tab === 'prospects') loadProspects();
+            if (tab === 'email-queue') loadEmailQueue();
+            if (tab === 'sent') loadSentEmails();
+        }
+
+        // ==================== PROSPECTS ====================
+        
+        async function loadProspects() {
+            if (!currentProjectId) return;
+            const status = document.getElementById('filter-status')?.value || '';
+            
+            try {
+                let url = `${API}/api/prospects?project_id=${currentProjectId}&limit=200`;
+                if (status) url += `&status=${status}`;
+                
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.success) {
+                    prospects = data.prospects || [];
+                    renderProspects();
+                    updateProspectStats();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderProspects() {
+            const tbody = document.getElementById('prospects-tbody');
+            
+            if (!prospects.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="no-data">Nessun prospect. Clicca "🔍 Cerca Aziende" per iniziare.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = prospects.map(p => {
+                const ld = p.light_data || {};
+                const fatturato = ld.fatturato_num ? `€${(ld.fatturato_num/1000000).toFixed(1)}M` : '-';
+                const settore = ld.descrizione_ateco ? ld.descrizione_ateco.substring(0, 40) + '...' : '-';
+                
+                return `
+                <tr>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" ${selectedProspects.has(p.id) ? 'checked' : ''} onchange="toggleProspectSelection('${p.id}')">
+                    </td>
+                    <td>
+                        <strong style="cursor:pointer;color:var(--blue);" onclick="showProspectDetail('${p.id}')">${p.company_name}</strong>
+                        <br><span style="font-size:11px;color:var(--gray-500);">${ld.citta || ''} ${ld.provincia ? `(${ld.provincia})` : ''}</span>
+                    </td>
+                    <td>${fatturato}</td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-size:12px;">${settore}</td>
+                    <td><span class="status status-${p.status}">${getStatusLabel(p.status)}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="showProspectDetail('${p.id}')">👁️</button>
+                        ${p.status === 'light' ? `<button class="btn btn-sm btn-primary" onclick="runHardResearch('${p.id}')">🔬</button>` : ''}
+                        ${p.status === 'hard' ? `<button class="btn btn-sm btn-success" onclick="generateEmailForProspect('${p.id}')">📧</button>` : ''}
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function getStatusLabel(status) {
+            const labels = { light: 'Light', selected: 'Selezionato', processing: 'Elaborazione...', hard: 'Hard Research', ready: 'Pronto', queued: 'In Coda', sent: 'Inviato', replied: 'Risposto' };
+            return labels[status] || status;
+        }
+
+        function toggleProspectSelection(id) {
+            if (selectedProspects.has(id)) selectedProspects.delete(id);
+            else selectedProspects.add(id);
+            updateBulkBar();
+            renderProspects();
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('select-all-prospects').checked;
+            if (checked) prospects.forEach(p => selectedProspects.add(p.id));
+            else selectedProspects.clear();
+            renderProspects();
+            updateBulkBar();
+        }
+
+        function clearSelection() {
+            selectedProspects.clear();
+            document.getElementById('select-all-prospects').checked = false;
+            renderProspects();
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            const bar = document.getElementById('prospects-bulk-bar');
+            document.getElementById('selected-count').textContent = selectedProspects.size;
+            bar.classList.toggle('visible', selectedProspects.size > 0);
+        }
+
+        async function bulkSelectForHardResearch() {
+            if (!selectedProspects.size) return;
+            toast(`Avvio Hard Research per ${selectedProspects.size} prospect...`, 'success');
+            
+            for (const id of selectedProspects) {
+                await runHardResearch(id, false);
+            }
+            
+            toast('Hard Research completata!', 'success');
+            clearSelection();
+            loadProspects();
+        }
+
+        async function bulkGenerateEmails() {
+            if (!selectedProspects.size) return;
+            
+            try {
+                const res = await fetch(`${API}/api/email-queue/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: currentProjectId, prospect_ids: Array.from(selectedProspects) })
+                });
+                const data = await res.json();
+                toast(`${data.created} email generate`, 'success');
+                clearSelection();
+                loadProspects();
+                loadEmailQueue();
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        async function bulkDeleteProspects() {
+            if (!selectedProspects.size || !confirm(`Eliminare ${selectedProspects.size} prospects?`)) return;
+            
+            for (const id of selectedProspects) {
+                await fetch(`${API}/api/prospects/${id}`, { method: 'DELETE' });
+            }
+            toast('Eliminati', 'success');
+            clearSelection();
+            loadProspects();
+        }
+
+        async function runHardResearch(id, showToast = true) {
+            if (showToast) toast('Avvio Hard Research...', 'success');
+            try {
+                await fetch(`${API}/api/prospects/${id}/hard-research`, { method: 'POST' });
+                if (showToast) {
+                    toast('Hard Research completata!', 'success');
+                    loadProspects();
+                }
+            } catch (e) { if (showToast) toast('Errore', 'error'); }
+        }
+
+        async function generateEmailForProspect(id) {
+            try {
+                await fetch(`${API}/api/email-queue/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ project_id: currentProjectId, prospect_ids: [id] })
+                });
+                toast('Email generata!', 'success');
+                hideModal('prospect-modal');
+                loadEmailQueue();
+                switchTab('email-queue');
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        function showProspectDetail(id) {
+            currentProspectId = id;
+            const prospect = prospects.find(p => p.id === id);
+            if (!prospect) return;
+            
+            const ld = prospect.light_data || {};
+            
+            document.getElementById('prospect-modal-title').textContent = prospect.company_name;
+            
+            const body = document.getElementById('prospect-modal-body');
+            body.innerHTML = `
+                <div class="data-grid">
+                    <div class="data-item">
+                        <div class="data-item-label">Status</div>
+                        <div class="data-item-value"><span class="status status-${prospect.status}">${getStatusLabel(prospect.status)}</span></div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Partita IVA</div>
+                        <div class="data-item-value">${ld.partita_iva || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Codice ATECO</div>
+                        <div class="data-item-value">${ld.codice_ateco || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Settore</div>
+                        <div class="data-item-value">${ld.descrizione_ateco || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Fatturato (${ld.anno_fatturato || '-'})</div>
+                        <div class="data-item-value">€ ${ld.fatturato || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Utile (${ld.anno_utile || '-'})</div>
+                        <div class="data-item-value ${ld.utile_num > 0 ? 'positive' : ld.utile_num < 0 ? 'negative' : ''}">€ ${ld.utile || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Costo Personale</div>
+                        <div class="data-item-value">€ ${ld.costo_personale || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Dipendenti</div>
+                        <div class="data-item-value">${ld.dipendenti || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Indirizzo</div>
+                        <div class="data-item-value">${ld.indirizzo || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Città</div>
+                        <div class="data-item-value">${ld.citta || '-'} (${ld.provincia || '-'})</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Regione</div>
+                        <div class="data-item-value">${ld.regione || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Forma Giuridica</div>
+                        <div class="data-item-value">${ld.forma_giuridica || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Data Fondazione</div>
+                        <div class="data-item-value">${ld.data_fondazione || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Stato Attività</div>
+                        <div class="data-item-value">${ld.stato_attivita || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Camera di Commercio</div>
+                        <div class="data-item-value">${ld.camera_commercio || '-'} - REA ${ld.rea || '-'}</div>
+                    </div>
+                    <div class="data-item">
+                        <div class="data-item-label">Fonte</div>
+                        <div class="data-item-value"><a href="${ld.url_companyreports || '#'}" target="_blank">CompanyReports</a></div>
+                    </div>
+                </div>
+                
+                ${prospect.assets?.chatbot_url ? `
+                <div style="margin-top:20px;padding:16px;background:var(--blue-light);border-radius:8px;">
+                    <strong>🤖 Chatbot Demo:</strong><br>
+                    <a href="${prospect.assets.chatbot_url}" target="_blank">${prospect.assets.chatbot_url}</a>
+                </div>` : ''}
+                
+                ${prospect.assets?.report_url ? `
+                <div style="margin-top:12px;padding:16px;background:var(--green-light);border-radius:8px;">
+                    <strong>📊 Report PDF:</strong><br>
+                    <a href="${prospect.assets.report_url}" target="_blank">Scarica Report</a>
+                </div>` : ''}
+            `;
+            
+            showModal('prospect-modal');
+        }
+
+        function updateProspectStats() {
+            const total = prospects.length;
+            const hard = prospects.filter(p => p.status === 'hard').length;
+            const queued = prospects.filter(p => p.status === 'queued').length;
+            const sent = prospects.filter(p => p.status === 'sent').length;
+            
+            document.getElementById('prospects-count').textContent = total;
+            document.getElementById('stat-prospects').textContent = total;
+            document.getElementById('stat-selected').textContent = hard;
+            document.getElementById('stat-queued').textContent = queued;
+            document.getElementById('stat-sent').textContent = sent;
+        }
+
+        // ==================== SEARCH COMPANIES ====================
+        
+        async function searchCompanies() {
+            const provincia = document.getElementById('search-provincia').value.trim();
+            const maxResults = parseInt(document.getElementById('search-max').value) || 10;
+            const minRevenue = parseInt(document.getElementById('search-min-revenue').value) || 0;
+            
+            if (!provincia) { toast('Inserisci una provincia', 'error'); return; }
+            
+            const btn = document.getElementById('search-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Ricerca in corso...';
+            
+            try {
+                const res = await fetch(`${API}/api/company-search`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        provincia,
+                        maxResults,
+                        minRevenue,
+                        project_id: currentProjectId,
+                        autoSave: true
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    toast(`${data.saved || data.count} aziende trovate e salvate!`, 'success');
+                    hideModal('search-modal');
+                    loadProspects();
+                } else {
+                    toast('Errore: ' + data.error, 'error');
+                }
+            } catch (e) {
+                toast('Errore di connessione', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Cerca e Salva';
+            }
+        }
+
+        // ==================== EMAIL QUEUE ====================
+        
+        async function loadEmailQueue() {
+            if (!currentProjectId) return;
+            
+            try {
+                const res = await fetch(`${API}/api/email-queue?project_id=${currentProjectId}`);
+                const data = await res.json();
+                
+                if (data.success) {
+                    emailQueue = data.emails || [];
+                    renderEmailQueue();
+                    updateQueueStats();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderEmailQueue() {
+            const tbody = document.getElementById('queue-tbody');
+            const drafts = emailQueue.filter(e => e.status === 'draft' || e.status === 'approved');
+            
+            if (!drafts.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="no-data">Nessuna email in coda.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = drafts.map(e => `
+                <tr>
+                    <td class="checkbox-cell">
+                        <input type="checkbox" ${selectedEmails.has(e.id) ? 'checked' : ''} onchange="toggleEmailSelection('${e.id}')">
+                    </td>
+                    <td>
+                        <strong>${e.prospect?.company_name || 'N/A'}</strong>
+                        <br><span style="font-size:11px;color:var(--gray-500);">${e.prospect?.email || ''}</span>
+                    </td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${e.subject}</td>
+                    <td><span class="status status-${e.status}">${e.status === 'draft' ? 'Bozza' : 'Approvata'}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" onclick="editEmail('${e.id}')">✏️</button>
+                        ${e.status === 'draft' ? `<button class="btn btn-sm btn-success" onclick="approveEmail('${e.id}')">✅</button>` : ''}
+                        ${e.status === 'approved' ? `<button class="btn btn-sm btn-primary" onclick="sendSingleEmail('${e.id}')">🚀</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function toggleEmailSelection(id) {
+            if (selectedEmails.has(id)) selectedEmails.delete(id);
+            else selectedEmails.add(id);
+            updateQueueBulkBar();
+            renderEmailQueue();
+        }
+
+        function toggleSelectAllQueue() {
+            const checked = document.getElementById('select-all-queue').checked;
+            const drafts = emailQueue.filter(e => e.status === 'draft' || e.status === 'approved');
+            if (checked) drafts.forEach(e => selectedEmails.add(e.id));
+            else selectedEmails.clear();
+            renderEmailQueue();
+            updateQueueBulkBar();
+        }
+
+        function clearQueueSelection() {
+            selectedEmails.clear();
+            document.getElementById('select-all-queue').checked = false;
+            renderEmailQueue();
+            updateQueueBulkBar();
+        }
+
+        function updateQueueBulkBar() {
+            const bar = document.getElementById('queue-bulk-bar');
+            document.getElementById('queue-selected-count').textContent = selectedEmails.size;
+            bar.classList.toggle('visible', selectedEmails.size > 0);
+        }
+
+        async function editEmail(id) {
+            currentEmailId = id;
+            const email = emailQueue.find(e => e.id === id);
+            if (!email) return;
+            
+            document.getElementById('editor-recipient').value = `${email.prospect?.company_name} <${email.prospect?.email}>`;
+            document.getElementById('editor-subject').value = email.subject;
+            document.getElementById('editor-content').value = email.html_content;
+            
+            showModal('email-editor-modal');
+            
+            setTimeout(() => {
+                if (tinymce.get('editor-content')) tinymce.get('editor-content').remove();
+                tinymce.init({
+                    selector: '#editor-content',
+                    height: 400,
+                    menubar: false,
+                    plugins: 'link code',
+                    toolbar: 'undo redo | bold italic | link | code'
+                });
+            }, 100);
+        }
+
+        async function saveEmailChanges() {
+            const subject = document.getElementById('editor-subject').value;
+            const html_content = tinymce.get('editor-content')?.getContent() || document.getElementById('editor-content').value;
+            
+            try {
+                await fetch(`${API}/api/email-queue/${currentEmailId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subject, html_content })
+                });
+                hideModal('email-editor-modal');
+                toast('Email salvata', 'success');
+                loadEmailQueue();
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        async function saveAndApprove() {
+            await saveEmailChanges();
+            await approveEmail(currentEmailId);
+        }
+
+        async function approveEmail(id) {
+            try {
+                await fetch(`${API}/api/email-queue/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved' })
+                });
+                toast('Email approvata', 'success');
+                loadEmailQueue();
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        async function bulkApproveEmails() {
+            if (!selectedEmails.size) return;
+            try {
+                await fetch(`${API}/api/email-queue/bulk-approve`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids: Array.from(selectedEmails) })
+                });
+                toast(`${selectedEmails.size} email approvate`, 'success');
+                clearQueueSelection();
+                loadEmailQueue();
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        async function sendSingleEmail(id) {
+            if (!confirm('Inviare questa email?')) return;
+            try {
+                const res = await fetch(`${API}/api/email-queue/${id}/send`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    toast('Email inviata!', 'success');
+                    loadEmailQueue();
+                    loadProspects();
+                } else {
+                    toast('Errore: ' + data.error, 'error');
+                }
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        async function sendApprovedEmails() {
+            const approved = emailQueue.filter(e => e.status === 'approved');
+            if (!approved.length) { toast('Nessuna email approvata', 'error'); return; }
+            if (!confirm(`Inviare ${approved.length} email approvate?`)) return;
+            
+            try {
+                const res = await fetch(`${API}/api/email-queue/bulk-send`, { method: 'POST' });
+                const data = await res.json();
+                toast(`${data.sent}/${data.total} email inviate`, 'success');
+                loadEmailQueue();
+                loadProspects();
+            } catch (e) { toast('Errore', 'error'); }
+        }
+
+        function updateQueueStats() {
+            const drafts = emailQueue.filter(e => e.status === 'draft').length;
+            const approved = emailQueue.filter(e => e.status === 'approved').length;
+            document.getElementById('queue-count').textContent = drafts + approved;
+        }
+
+        // ==================== SENT EMAILS ====================
+        
+        async function loadSentEmails() {
+            if (!currentProjectId) return;
+            try {
+                const res = await fetch(`${API}/api/email-queue?project_id=${currentProjectId}&status=sent`);
+                const data = await res.json();
+                
+                const tbody = document.getElementById('sent-tbody');
+                const emails = data.emails || [];
+                
+                if (!emails.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="no-data">Nessuna email inviata.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = emails.map(e => `
+                    <tr>
+                        <td><strong>${e.prospect?.company_name || 'N/A'}</strong></td>
+                        <td>${e.subject}</td>
+                        <td>${e.sent_at ? new Date(e.sent_at).toLocaleString('it') : '-'}</td>
+                        <td>${e.opened_at ? '✅' : '❌'}</td>
+                        <td>${e.clicked_at ? '✅' : '❌'}</td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('sent-count').textContent = emails.length;
+            } catch (e) { console.error(e); }
+        }
+
+        // ==================== CHAT ====================
+        
+        function renderConversation() {
+            const el = document.getElementById('chat-messages');
+            el.innerHTML = '';
+            conversation.forEach(m => addMessageUI(m.content, m.role === 'assistant' ? 'ai' : 'user'));
+        }
+
+        function addMessageUI(content, type) {
+            const el = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `message ${type}`;
+            div.innerHTML = `
+                <div class="msg-avatar">${type === 'ai' ? '🧑‍💼' : '👤'}</div>
+                <div class="msg-bubble">${content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}</div>
+            `;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const el = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'message ai';
+            div.id = 'typing-indicator';
+            div.innerHTML = `<div class="msg-avatar">🧑‍💼</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+            el.appendChild(div);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            document.getElementById('typing-indicator')?.remove();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            addMessageUI(message, 'user');
+            conversation.push({ role: 'user', content: message });
+            input.value = '';
+            addTypingIndicator();
+
+            if (currentProjectId) {
+                fetch(`${API}/api/projects/${currentProjectId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: 'user', content: message })
+                }).catch(console.error);
+            }
+
+            try {
+                const res = await fetch(`${API}/api/ai/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message,
+                        conversationHistory: conversation.slice(-20),
+                        campaignData: currentProject || {},
+                        testEmail
+                    })
+                });
+
+                const data = await res.json();
+                removeTypingIndicator();
+
+                if (data.success && data.response) {
+                    const r = data.response;
+                    const aiMessage = r.message || JSON.stringify(r);
+                    
+                    addMessageUI(aiMessage, 'ai');
+                    conversation.push({ role: 'assistant', content: aiMessage });
+                    
+                    if (currentProjectId) {
+                        fetch(`${API}/api/projects/${currentProjectId}/messages`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ role: 'assistant', content: aiMessage })
+                        }).catch(console.error);
+                    }
+                } else {
+                    addMessageUI('Errore: ' + (data.error || 'Risposta non valida'), 'ai');
+                }
+            } catch (e) {
+                removeTypingIndicator();
+                addMessageUI('Errore di connessione. Riprova.', 'ai');
+            }
+        }
+
+        // ==================== MODALS & UTILS ====================
+        
+        function showModal(id) { document.getElementById(id).classList.add('show'); }
+        function hideModal(id) { 
+            document.getElementById(id).classList.remove('show');
+            if (id === 'email-editor-modal' && tinymce.get('editor-content')) {
+                tinymce.get('editor-content').remove();
+            }
+        }
+
+        function toast(msg, type = '') {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.textContent = msg;
+            document.getElementById('toast-container').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        function saveSettings() {
+            testEmail = document.getElementById('settings-test-email').value.trim();
+            localStorage.setItem('testEmail', testEmail);
+            hideModal('settings-modal');
+            toast('Impostazioni salvate', 'success');
+        }
+    </script>
+</body>
+</html>
