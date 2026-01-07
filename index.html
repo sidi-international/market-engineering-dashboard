@@ -109,6 +109,22 @@
         .status-hard { background: var(--purple-light); color: var(--purple); }
         .status-ready { background: var(--green-light); color: var(--green); }
         .status-queued { background: var(--blue-light); color: var(--blue); }
+        
+        /* Barra completezza dati */
+        .status-with-bar { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+        .completeness-bar { 
+            width: 100%; 
+            max-width: 80px; 
+            height: 4px; 
+            background: var(--gray-200); 
+            border-radius: 2px; 
+            overflow: hidden;
+        }
+        .completeness-fill { 
+            height: 100%; 
+            border-radius: 2px; 
+            transition: width 0.3s ease;
+        }
         .status-sent { background: var(--green-light); color: var(--green); }
         .status-draft { background: var(--gray-100); color: var(--gray-600); }
         .status-approved { background: var(--green-light); color: var(--green); }
@@ -780,6 +796,7 @@
                 const ld = p.light_data || {};
                 const fatturato = ld.fatturato_num ? `€${(ld.fatturato_num/1000000).toFixed(1)}M` : '-';
                 const settore = ld.descrizione_ateco ? ld.descrizione_ateco.substring(0, 40) + '...' : '-';
+                const completeness = ld.data_completeness || calculateLocalCompleteness(p);
                 
                 return `
                 <tr>
@@ -792,7 +809,14 @@
                     </td>
                     <td>${fatturato}</td>
                     <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;font-size:12px;">${settore}</td>
-                    <td><span class="status status-${p.status}">${getStatusLabel(p.status)}</span></td>
+                    <td>
+                        <div class="status-with-bar">
+                            <span class="status status-${p.status}">${getStatusLabel(p.status)}</span>
+                            <div class="completeness-bar" title="${completeness}% dati disponibili">
+                                <div class="completeness-fill" style="width:${completeness}%;background:${getCompletenessColor(completeness)}"></div>
+                            </div>
+                        </div>
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-secondary" onclick="showProspectDetail('${p.id}')">👁️</button>
                         ${p.status === 'light' ? `<button class="btn btn-sm btn-primary" onclick="runHardResearch('${p.id}')">🔬</button>` : ''}
@@ -800,6 +824,34 @@
                     </td>
                 </tr>
             `}).join('');
+        }
+        
+        // Calcola completezza dati lato client (fallback)
+        function calculateLocalCompleteness(p) {
+            const ld = p.light_data || {};
+            let score = 0;
+            if (p.website) score += 15;
+            if (p.email) score += 15;
+            if (p.phone || ld.phone) score += 5;
+            if (ld.fatturato_num) score += 15;
+            if (ld.utile_num) score += 5;
+            if (ld.dipendenti) score += 5;
+            if (ld.partita_iva) score += 5;
+            if (ld.codice_ateco) score += 5;
+            if (ld.indirizzo) score += 5;
+            if (ld.provincia) score += 5;
+            if (ld.descrizione_ateco || ld.settore) score += 5;
+            if (ld.data_fondazione) score += 5;
+            if (ld.forma_giuridica) score += 5;
+            score += 5; // Nome sempre presente
+            return Math.min(100, score);
+        }
+        
+        function getCompletenessColor(pct) {
+            if (pct >= 70) return '#22c55e'; // verde brillante
+            if (pct >= 40) return '#84cc16'; // verde lime
+            if (pct >= 20) return '#eab308'; // giallo
+            return '#f97316'; // arancione
         }
 
         function getStatusLabel(status) {
