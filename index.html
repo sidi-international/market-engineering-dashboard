@@ -971,80 +971,154 @@
             if (!prospect) return;
             
             const ld = prospect.light_data || {};
+            const completeness = ld.data_completeness || calculateLocalCompleteness(prospect);
+            const completenessColor = getCompletenessColor(completeness);
             
             document.getElementById('prospect-modal-title').textContent = prospect.company_name;
             
             const body = document.getElementById('prospect-modal-body');
             body.innerHTML = `
-                <div class="data-grid">
-                    <div class="data-item">
-                        <div class="data-item-label">Status</div>
-                        <div class="data-item-value"><span class="status status-${prospect.status}">${getStatusLabel(prospect.status)}</span></div>
+                <!-- HEADER: Status e Completezza -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding:16px;background:linear-gradient(135deg,#f8fafc,#e2e8f0);border-radius:12px;">
+                    <div>
+                        <span class="status status-${prospect.status}" style="font-size:14px;">${getStatusLabel(prospect.status)}</span>
                     </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Partita IVA</div>
-                        <div class="data-item-value">${ld.partita_iva || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Codice ATECO</div>
-                        <div class="data-item-value">${ld.codice_ateco || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Settore</div>
-                        <div class="data-item-value">${ld.descrizione_ateco || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Fatturato (${ld.anno_fatturato || '-'})</div>
-                        <div class="data-item-value">€ ${ld.fatturato || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Utile (${ld.anno_utile || '-'})</div>
-                        <div class="data-item-value ${ld.utile_num > 0 ? 'positive' : ld.utile_num < 0 ? 'negative' : ''}">€ ${ld.utile || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Costo Personale</div>
-                        <div class="data-item-value">€ ${ld.costo_personale || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Dipendenti</div>
-                        <div class="data-item-value">${ld.dipendenti || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Indirizzo</div>
-                        <div class="data-item-value">${ld.indirizzo || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Città</div>
-                        <div class="data-item-value">${ld.citta || '-'} (${ld.provincia || '-'})</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Regione</div>
-                        <div class="data-item-value">${ld.regione || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Forma Giuridica</div>
-                        <div class="data-item-value">${ld.forma_giuridica || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Data Fondazione</div>
-                        <div class="data-item-value">${ld.data_fondazione || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Stato Attività</div>
-                        <div class="data-item-value">${ld.stato_attivita || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Camera di Commercio</div>
-                        <div class="data-item-value">${ld.camera_commercio || '-'} - REA ${ld.rea || '-'}</div>
-                    </div>
-                    <div class="data-item">
-                        <div class="data-item-label">Fonte</div>
-                        <div class="data-item-value"><a href="${ld.url_companyreports || '#'}" target="_blank">CompanyReports</a></div>
+                    <div style="text-align:right;">
+                        <div style="font-size:12px;color:var(--gray-500);margin-bottom:4px;">Completezza dati</div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div style="width:100px;height:8px;background:var(--gray-200);border-radius:4px;overflow:hidden;">
+                                <div style="width:${completeness}%;height:100%;background:${completenessColor};border-radius:4px;"></div>
+                            </div>
+                            <span style="font-weight:600;color:${completenessColor}">${completeness}%</span>
+                        </div>
                     </div>
                 </div>
                 
+                <!-- CONTATTI PRINCIPALI -->
+                <div style="margin-bottom:20px;padding:16px;background:#fff;border:2px solid var(--gray-200);border-radius:12px;">
+                    <div style="font-weight:600;font-size:13px;color:var(--gray-500);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">📞 Contatti</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                        <div>
+                            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Website</div>
+                            <div style="font-size:14px;font-weight:500;">
+                                ${prospect.website ? `<a href="${prospect.website}" target="_blank" style="color:var(--blue);word-break:break-all;">🌐 ${new URL(prospect.website).hostname}</a>` : '<span style="color:var(--gray-400);">-</span>'}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Email</div>
+                            <div style="font-size:14px;font-weight:500;">
+                                ${prospect.email ? `<a href="mailto:${prospect.email}" style="color:var(--blue);">📧 ${prospect.email}</a>` : '<span style="color:var(--gray-400);">-</span>'}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Telefono</div>
+                            <div style="font-size:14px;font-weight:500;">
+                                ${prospect.phone || ld.phone ? `<a href="tel:${prospect.phone || ld.phone}" style="color:var(--blue);">📱 ${prospect.phone || ld.phone}</a>` : '<span style="color:var(--gray-400);">-</span>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- DATI FINANZIARI -->
+                <div style="margin-bottom:20px;padding:16px;background:${ld.fatturato_num ? 'linear-gradient(135deg,#ecfdf5,#d1fae5)' : '#fff'};border:2px solid ${ld.fatturato_num ? 'var(--green)' : 'var(--gray-200)'};border-radius:12px;">
+                    <div style="font-weight:600;font-size:13px;color:var(--gray-500);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">💰 Dati Finanziari ${ld.anno_fatturato ? `(${ld.anno_fatturato})` : ''}</div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                        <div>
+                            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Fatturato</div>
+                            <div style="font-size:18px;font-weight:700;color:${ld.fatturato_num ? 'var(--green)' : 'var(--gray-400)'};">
+                                ${ld.fatturato_num ? `€${(ld.fatturato_num/1000000).toFixed(2)}M` : '-'}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Utile</div>
+                            <div style="font-size:18px;font-weight:700;color:${ld.utile_num > 0 ? 'var(--green)' : ld.utile_num < 0 ? 'var(--red)' : 'var(--gray-400)'};">
+                                ${ld.utile_num ? `€${(ld.utile_num/1000).toFixed(0)}K` : '-'}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Dipendenti</div>
+                            <div style="font-size:18px;font-weight:700;color:${ld.dipendenti ? 'var(--blue)' : 'var(--gray-400)'};">
+                                ${ld.dipendenti || '-'}
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--gray-500);margin-bottom:4px;">Costo Personale</div>
+                            <div style="font-size:14px;font-weight:600;color:var(--gray-600);">
+                                ${ld.costo_personale ? `€${ld.costo_personale}` : '-'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- DATI AZIENDALI -->
+                <div style="margin-bottom:20px;padding:16px;background:#fff;border:2px solid var(--gray-200);border-radius:12px;">
+                    <div style="font-weight:600;font-size:13px;color:var(--gray-500);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">🏢 Dati Aziendali</div>
+                    <div class="data-grid">
+                        <div class="data-item">
+                            <div class="data-item-label">Partita IVA</div>
+                            <div class="data-item-value" style="font-family:monospace;">${ld.partita_iva || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Codice ATECO</div>
+                            <div class="data-item-value">${ld.codice_ateco || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Settore</div>
+                            <div class="data-item-value">${ld.descrizione_ateco || ld.settore || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Forma Giuridica</div>
+                            <div class="data-item-value">${ld.forma_giuridica || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Data Fondazione</div>
+                            <div class="data-item-value">${ld.data_fondazione || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Stato Attività</div>
+                            <div class="data-item-value">${ld.stato_attivita || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- INDIRIZZO -->
+                <div style="margin-bottom:20px;padding:16px;background:#fff;border:2px solid var(--gray-200);border-radius:12px;">
+                    <div style="font-weight:600;font-size:13px;color:var(--gray-500);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">📍 Sede</div>
+                    <div class="data-grid">
+                        <div class="data-item" style="grid-column:span 2;">
+                            <div class="data-item-label">Indirizzo</div>
+                            <div class="data-item-value">${ld.indirizzo || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Città</div>
+                            <div class="data-item-value">${ld.citta || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Provincia</div>
+                            <div class="data-item-value">${ld.provincia || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Regione</div>
+                            <div class="data-item-value">${ld.regione || '-'}</div>
+                        </div>
+                        <div class="data-item">
+                            <div class="data-item-label">Camera Commercio / REA</div>
+                            <div class="data-item-value">${ld.camera_commercio || '-'} / ${ld.rea || '-'}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- FONTE -->
+                ${ld.url_companyreports ? `
+                <div style="text-align:center;padding:12px;background:var(--gray-100);border-radius:8px;">
+                    <a href="${ld.url_companyreports}" target="_blank" style="color:var(--blue);font-size:13px;">
+                        📊 Vedi profilo completo su CompanyReports →
+                    </a>
+                </div>` : ''}
+                
+                <!-- ASSETS -->
                 ${prospect.assets?.chatbot_url ? `
-                <div style="margin-top:20px;padding:16px;background:var(--blue-light);border-radius:8px;">
+                <div style="margin-top:16px;padding:16px;background:var(--blue-light);border-radius:8px;">
                     <strong>🤖 Chatbot Demo:</strong><br>
                     <a href="${prospect.assets.chatbot_url}" target="_blank">${prospect.assets.chatbot_url}</a>
                 </div>` : ''}
