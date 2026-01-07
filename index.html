@@ -830,20 +830,32 @@
         function calculateLocalCompleteness(p) {
             const ld = p.light_data || {};
             let score = 0;
-            if (p.website) score += 15;
-            if (p.email) score += 15;
-            if (p.phone || ld.phone) score += 5;
-            if (ld.fatturato_num) score += 15;
-            if (ld.utile_num) score += 5;
-            if (ld.dipendenti) score += 5;
-            if (ld.partita_iva) score += 5;
-            if (ld.codice_ateco) score += 5;
-            if (ld.indirizzo) score += 5;
-            if (ld.provincia) score += 5;
-            if (ld.descrizione_ateco || ld.settore) score += 5;
-            if (ld.data_fondazione) score += 5;
-            if (ld.forma_giuridica) score += 5;
-            score += 5; // Nome sempre presente
+            
+            // Helper per verificare che un valore sia realmente presente
+            const hasValue = (v) => v && v !== '-' && v !== '€ -' && v !== 'null' && v !== 'undefined' && String(v).trim() !== '';
+            
+            // Dati base (max 35)
+            if (hasValue(p.website)) score += 15;
+            if (hasValue(p.email)) score += 15;
+            if (hasValue(p.phone) || hasValue(ld.phone)) score += 5;
+            
+            // Dati finanziari (max 30)
+            if (hasValue(ld.fatturato_num) || (hasValue(ld.fatturato) && ld.fatturato !== '€ -')) score += 15;
+            if (hasValue(ld.utile_num) || (hasValue(ld.utile) && ld.utile !== '€ -')) score += 5;
+            if (hasValue(ld.dipendenti)) score += 5;
+            if (hasValue(ld.partita_iva)) score += 5;
+            
+            // Dati aziendali (max 25)
+            if (hasValue(ld.codice_ateco)) score += 5;
+            if (hasValue(ld.indirizzo)) score += 5;
+            if (hasValue(ld.provincia)) score += 5;
+            if (hasValue(ld.descrizione_ateco) || hasValue(ld.settore)) score += 5;
+            if (hasValue(ld.forma_giuridica)) score += 5;
+            
+            // Dati extra (max 10)
+            if (hasValue(ld.data_fondazione)) score += 5;
+            if (hasValue(ld.stato_attivita)) score += 5;
+            
             return Math.min(100, score);
         }
         
