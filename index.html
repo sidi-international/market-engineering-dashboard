@@ -265,6 +265,7 @@
             </div>
             <div class="clients-list" id="clients-list"></div>
             <div class="sidebar-footer">
+                <button class="settings-btn" style="margin-bottom:8px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);" onclick="openWarRoom()">💡 War Room</button>
                 <button class="settings-btn" onclick="showModal('settings-modal')">⚙️ Impostazioni</button>
             </div>
         </aside>
@@ -1742,6 +1743,16 @@
             if (id === 'email-editor-modal' && tinymce.get('editor-content')) {
                 tinymce.get('editor-content').remove();
             }
+        }
+
+        // War Room Integration
+        const WARROOM_URL = 'http://localhost:3001'; // Aggiornare con URL Vercel in produzione
+        
+        function openWarRoom() {
+            const url = currentProjectId 
+                ? `${WARROOM_URL}?project_id=${currentProjectId}`
+                : WARROOM_URL;
+            window.open(url, '_blank');
         }
 
         function toast(msg, type = '') {
