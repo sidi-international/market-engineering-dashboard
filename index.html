@@ -42,10 +42,55 @@
         .client-projects { background: var(--gray-900); border-radius: 0 0 8px 8px; max-height: 0; overflow: hidden; transition: max-height 0.3s, padding 0.3s; padding: 0 8px; }
         .client-projects.expanded { max-height: 500px; padding: 4px 8px 8px; }
         
-        .project-item { padding: 12px; border-radius: 6px; cursor: pointer; margin-top: 4px; border-left: 3px solid transparent; transition: all 0.2s; }
+        .project-item { padding: 12px; border-radius: 6px; cursor: pointer; margin-top: 4px; border-left: 3px solid transparent; transition: all 0.2s; display: flex; align-items: center; justify-content: space-between; position: relative; }
         .project-item:hover { background: var(--gray-800); }
         .project-item.active { background: var(--gray-800); border-left-color: var(--blue); }
-        .project-name { font-size: 13px; color: white; }
+        .project-name { font-size: 13px; color: white; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* Kebab Menu (tre puntini) */
+        .project-kebab { 
+            opacity: 0; 
+            padding: 4px 6px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            color: var(--gray-400);
+            transition: all 0.2s;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+        .project-item:hover .project-kebab { opacity: 1; }
+        .project-kebab:hover { background: var(--gray-700); color: white; }
+        
+        /* Dropdown Menu */
+        .project-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--gray-800);
+            border: 1px solid var(--gray-700);
+            border-radius: 8px;
+            padding: 4px;
+            min-width: 160px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .project-dropdown.show { display: block; }
+        .project-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--gray-300);
+            font-size: 13px;
+            transition: all 0.15s;
+        }
+        .project-dropdown-item:hover { background: var(--gray-700); color: white; }
+        .project-dropdown-item.danger { color: var(--red); }
+        .project-dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+        .project-dropdown-divider { height: 1px; background: var(--gray-700); margin: 4px 0; }
 
         .sidebar-footer { padding: 12px; border-top: 1px solid var(--gray-800); }
         .settings-btn { display: flex; align-items: center; gap: 8px; padding: 10px; background: var(--gray-900); border-radius: 8px; cursor: pointer; width: 100%; border: none; color: var(--gray-400); font-size: 13px; }
@@ -651,6 +696,22 @@
                             ${projects.map(p => `
                                 <div class="project-item ${currentProjectId === p.id ? 'active' : ''}" onclick="event.stopPropagation();selectProject('${p.id}')">
                                     <span class="project-name">${p.name}</span>
+                                    <span class="project-kebab" onclick="event.stopPropagation();toggleProjectMenu('${p.id}', event)">⋮</span>
+                                    <div class="project-dropdown" id="project-menu-${p.id}">
+                                        <div class="project-dropdown-item" onclick="event.stopPropagation();cloneProject('${p.id}', '${p.name}')">
+                                            📋 Clona
+                                        </div>
+                                        <div class="project-dropdown-item" onclick="event.stopPropagation();forkProject('${p.id}', '${p.name}')">
+                                            🔀 Fork (altro cliente)
+                                        </div>
+                                        <div class="project-dropdown-item" onclick="event.stopPropagation();renameProject('${p.id}', '${p.name}')">
+                                            ✏️ Rinomina
+                                        </div>
+                                        <div class="project-dropdown-divider"></div>
+                                        <div class="project-dropdown-item danger" onclick="event.stopPropagation();deleteProjectFromMenu('${p.id}', '${p.name}')">
+                                            🗑️ Elimina
+                                        </div>
+                                    </div>
                                 </div>
                             `).join('')}
                         </div>
@@ -749,6 +810,190 @@
             document.getElementById('no-project-view').style.display = 'flex';
             await loadClients();
             toast('Eliminato', 'success');
+        }
+
+        // ==========================================
+        // MENU KEBAB PROGETTI
+        // ==========================================
+        
+        let activeProjectMenu = null;
+        
+        function toggleProjectMenu(projectId, event) {
+            event.stopPropagation();
+            
+            // Chiudi menu precedente
+            if (activeProjectMenu && activeProjectMenu !== projectId) {
+                document.getElementById(`project-menu-${activeProjectMenu}`)?.classList.remove('show');
+            }
+            
+            const menu = document.getElementById(`project-menu-${projectId}`);
+            if (menu) {
+                menu.classList.toggle('show');
+                activeProjectMenu = menu.classList.contains('show') ? projectId : null;
+            }
+        }
+        
+        // Chiudi menu cliccando fuori
+        document.addEventListener('click', () => {
+            if (activeProjectMenu) {
+                document.getElementById(`project-menu-${activeProjectMenu}`)?.classList.remove('show');
+                activeProjectMenu = null;
+            }
+        });
+        
+        async function cloneProject(projectId, projectName) {
+            const newName = prompt('Nome del nuovo progetto (clone):', `${projectName} - Copia`);
+            if (!newName) return;
+            
+            try {
+                const res = await fetch(`${API}/api/projects/${projectId}/clone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: newName,
+                        include_strategy: true,
+                        include_templates: true,
+                        include_funnel: true
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    toast(`Progetto "${newName}" creato!`, 'success');
+                    await loadClients();
+                    selectProject(data.project.id);
+                } else {
+                    toast(`Errore: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                toast('Errore durante la clonazione', 'error');
+            }
+        }
+        
+        async function forkProject(projectId, projectName) {
+            // Mostra modal per selezionare cliente destinazione
+            const clientOptions = clients.map(c => `${c.id}:${c.name || c.company_name}`).join('\n');
+            const targetInfo = prompt(
+                `Fork "${projectName}" per un altro cliente.\n\nInserisci l'ID del cliente destinazione:\n\n${clients.map(c => `• ${c.name || c.company_name}`).join('\n')}\n\nOppure "nuovo" per creare un nuovo cliente:`,
+                'nuovo'
+            );
+            
+            if (!targetInfo) return;
+            
+            let targetClientId = null;
+            
+            if (targetInfo.toLowerCase() === 'nuovo') {
+                const newClientName = prompt('Nome del nuovo cliente:');
+                if (!newClientName) return;
+                
+                try {
+                    const clientRes = await fetch(`${API}/api/clients`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newClientName, company_name: newClientName })
+                    });
+                    const clientData = await clientRes.json();
+                    if (clientData.success) {
+                        targetClientId = clientData.client.id;
+                        toast(`Cliente "${newClientName}" creato!`, 'success');
+                    } else {
+                        toast('Errore creazione cliente', 'error');
+                        return;
+                    }
+                } catch (e) {
+                    toast('Errore', 'error');
+                    return;
+                }
+            } else {
+                // Cerca il cliente per nome
+                const foundClient = clients.find(c => 
+                    c.name?.toLowerCase().includes(targetInfo.toLowerCase()) ||
+                    c.company_name?.toLowerCase().includes(targetInfo.toLowerCase()) ||
+                    c.id === targetInfo
+                );
+                if (foundClient) {
+                    targetClientId = foundClient.id;
+                } else {
+                    toast('Cliente non trovato', 'error');
+                    return;
+                }
+            }
+            
+            const newName = prompt('Nome del nuovo progetto:', `${projectName} - Fork`);
+            if (!newName) return;
+            
+            try {
+                const res = await fetch(`${API}/api/projects/${projectId}/clone`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: newName,
+                        target_client_id: targetClientId,
+                        include_strategy: true,
+                        include_templates: true,
+                        include_funnel: true
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    toast(`Fork "${newName}" creato!`, 'success');
+                    await loadClients();
+                    selectProject(data.project.id);
+                } else {
+                    toast(`Errore: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                toast('Errore durante il fork', 'error');
+            }
+        }
+        
+        async function renameProject(projectId, currentName) {
+            const newName = prompt('Nuovo nome del progetto:', currentName);
+            if (!newName || newName === currentName) return;
+            
+            try {
+                const res = await fetch(`${API}/api/projects/${projectId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: newName })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    toast(`Rinominato in "${newName}"`, 'success');
+                    await loadClients();
+                    if (currentProjectId === projectId) {
+                        loadProject(projectId);
+                    }
+                } else {
+                    toast(`Errore: ${data.error}`, 'error');
+                }
+            } catch (e) {
+                toast('Errore durante la rinomina', 'error');
+            }
+        }
+        
+        async function deleteProjectFromMenu(projectId, projectName) {
+            if (!confirm(`Eliminare il progetto "${projectName}"?\n\nQuesta azione è irreversibile!`)) return;
+            
+            try {
+                await fetch(`${API}/api/projects/${projectId}`, { method: 'DELETE' });
+                toast(`"${projectName}" eliminato`, 'success');
+                
+                if (currentProjectId === projectId) {
+                    currentProjectId = null;
+                    document.getElementById('project-view').style.display = 'none';
+                    document.getElementById('no-project-view').style.display = 'flex';
+                }
+                
+                await loadClients();
+            } catch (e) {
+                toast('Errore durante l\'eliminazione', 'error');
+            }
         }
 
         // ==================== TABS ====================
